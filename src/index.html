@@ -1,0 +1,1399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Generador de Tarjetas de Monstruo</title>
+  <style>
+    * {
+      box-sizing: border-box;
+    }
+    
+    body {
+      font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
+      margin: 0;
+      padding: 0;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      background: linear-gradient(135deg, #0f0d0a 0%, #1a1410 50%, #0f0d0a 100%);
+      min-height: 100vh;
+    }
+    
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: 
+        repeating-linear-gradient(
+          90deg,
+          transparent 1px,
+          transparent 2px
+        );
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    #container {
+      display: grid;
+      grid-template-columns: 1fr;
+      grid-template-areas:
+        "form"
+        "controls"
+        "cards";
+      max-width: 1600px;
+      margin: 15px 10px;
+      gap: 15px;
+      position: relative;
+      z-index: 2;
+    }
+    
+    @media (min-width: 1400px) {
+      #container {
+        grid-template-columns: 1fr 1fr 1fr;
+        grid-template-areas: 
+          "form form form"
+          "controls controls controls"
+          "cards cards cards";
+        gap: 15px;
+      }
+    }
+    
+    #form {
+      flex: 1 1 900px;
+      min-width: 300px;
+      width: 100%;
+      max-width: 900px;
+      background: linear-gradient(135deg, #2a2420 0%, #1f1c19 100%);
+      padding: 15px;
+      border: 1px solid #d4af37;
+      position: relative;
+      grid-area: form;
+    }
+    
+    #form::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+
+    #form::after {
+      content: '';
+      position: absolute;
+      bottom: 0;
+      left: 0;
+      right: 0;
+      height: 2px;
+    }
+    
+    #form > div > div > label {
+      margin: 6px 0 3px 0;
+    }
+    
+    #form textarea {
+      min-height: 60px;
+    }
+    #card-wrapper {
+      flex: 1 1 450px;
+      min-width: 350px;
+      width: 100%;
+      max-width: 900px;
+      display: flex;
+      justify-content: center;
+      align-items: flex-start;
+      gap: 15px;
+      padding: 10px;
+      flex-wrap: wrap;
+      grid-area: cards;
+      justify-self: center;
+    }
+    
+    @media (min-width: 1400px) {
+      #card-wrapper {
+        justify-self: unset;
+        max-width: unset;
+        gap: 20px;
+      }
+    }
+    
+    #controls-section {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+      row-gap: 1px;
+      max-width: 900px;
+      width: 100%;
+      grid-area: controls;
+      justify-self: center;
+    }
+    
+    #controls-section > div {
+      display: flex;
+      flex-direction: column;
+      gap: 3px;
+    }
+    
+    #controls-section label {
+      margin: 0;
+      font-size: 0.7rem;
+    }
+    
+    #controls-section input[type="number"] {
+      width: 100%;
+      padding: 4px;
+      font-size: 0.85rem;
+    }
+    
+    #controls-section button {
+      margin: 0;
+      padding: 6px 8px;
+      font-size: 0.75rem;
+      width: 100%;
+    }
+    
+    @media (min-width: 1400px) {
+      #controls-section {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 6px;
+        row-gap: 1px;
+        width: 100%;
+        max-width: unset;
+        justify-self: unset;
+      }
+      
+      #controls-section > div {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+      }
+      
+      #controls-section label {
+        margin: 0;
+        font-size: 0.7rem;
+      }
+      
+      #controls-section input[type="number"] {
+        width: 100%;
+        padding: 4px;
+        font-size: 0.85rem;
+      }
+      
+      #controls-section button {
+        margin: 0;
+        padding: 6px 8px;
+        font-size: 0.75rem;
+        width: 100%;
+      }
+    }
+    
+    
+    #backside-card {
+      width: 100%;
+      max-width: 400px;
+      border: 4px solid #8b7355;
+      background: #e8dcc8;
+      padding: 0;
+      box-sizing: border-box;
+      position: relative;
+      font-size: 0.85rem;
+      font-family: "Segoe UI", sans-serif;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.6),
+        inset 0 0 30px rgba(0, 0, 0, 0.1),
+        0 0 40px rgba(139, 115, 85, 0.3);
+      transform: perspective(1000px);
+      display: none;
+      overflow: hidden;
+    }
+
+    /* Patrón de barras diagonales para reverso sin fondo */
+    #backside-card.no-background {
+      background: 
+        repeating-linear-gradient(
+          45deg,
+          #e8dcc8,
+          #e8dcc8 10px,
+          #f5ebe0 10px,
+          #f5ebe0 20px
+        );
+    }
+    
+    #backside-card.active {
+      display: block;
+    }
+
+    /* Overlay suave (blur muy ligero) */
+    #backside-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(26, 20, 16, 0.15);
+      backdrop-filter: blur(1px);
+      z-index: 2;
+      pointer-events: none;
+    }
+
+    /* Marco decorativo en los bordes */
+    #backside-card::after {
+      content: '';
+      position: absolute;
+      top: 8px;
+      left: 8px;
+      right: 8px;
+      bottom: 8px;
+      border: 2px solid rgba(212, 175, 55, 0.4);
+      border-radius: 2px;
+      z-index: 3;
+      pointer-events: none;
+      box-shadow: 
+        inset 0 0 10px rgba(212, 175, 55, 0.1),
+        0 0 0 1px rgba(212, 175, 55, 0.2);
+      transition: border-color 0.3s, box-shadow 0.3s;
+    }
+
+    /* Cuando no hay fondo, el marco más oscuro (marrón oscuro) */
+    #backside-card.no-background::after {
+      border-color: #8b7355;
+      box-shadow: 
+        inset 0 0 10px rgba(139, 115, 85, 0.3),
+        0 0 0 1px rgba(139, 115, 85, 0.6);
+    }
+    
+    /* Esquinas decorativas */
+    #backside-card-corners {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 4;
+      pointer-events: none;
+    }
+
+    .corner {
+      position: absolute;
+      width: 20px;
+      height: 20px;
+      border: 2px solid rgba(212, 175, 55, 0.6);
+      transition: border-color 0.3s;
+    }
+
+    /* Cuando no hay fondo, esquinas más visibles (marrón oscuro) */
+    #backside-card.no-background .corner {
+      border-color: #8b7355;
+    }
+
+    .corner.tl {
+      top: 4px;
+      left: 4px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .corner.tr {
+      top: 4px;
+      right: 4px;
+      border-left: none;
+      border-bottom: none;
+    }
+
+    .corner.bl {
+      bottom: 4px;
+      left: 4px;
+      border-right: none;
+      border-top: none;
+    }
+
+    .corner.br {
+      bottom: 4px;
+      right: 4px;
+      border-left: none;
+      border-top: none;
+    }
+    
+    #backside-card-content {
+      position: relative;
+      z-index: 1;
+      width: 100%;
+      height: 100%;
+    }
+    
+    .stat-card {
+      width: 100%;
+      max-width: 400px;
+      border: 4px solid #8b7355;
+      background: #e8dcc8;
+      padding: 12px;
+      box-sizing: border-box;
+      position: relative;
+      font-size: 0.85rem;
+      font-family: "Segoe UI", sans-serif;
+      background-size: cover;
+      background-position: center;
+      box-shadow: 
+        0 8px 20px rgba(0, 0, 0, 0.6),
+        inset 0 0 30px rgba(0, 0, 0, 0.1),
+        0 0 40px rgba(139, 115, 85, 0.3);
+      transform: perspective(1000px);
+    }
+    
+    .stat-card .overlay {
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(255, 255, 255, 0.75);
+      pointer-events: none;
+      z-index: 0;
+    }
+    
+    .stat-card > * {
+      position: relative;
+      z-index: 1;
+    }
+    
+    .stat-card h1 {
+      text-align: left;
+      margin: 0 0 6px 0;
+      font-size: 1.3rem;
+      text-transform: uppercase;
+      border-bottom: 2px solid #8b7355;
+      padding-bottom: 6px;
+      font-weight: bold;
+      color: #3e2723;
+      letter-spacing: 0.5px;
+    }
+    .detail-line {
+      font-size: 0.75rem;
+      margin: 1px 0;
+      color: #3e2723;
+      line-height: 1.1;
+      word-wrap: break-word;
+      overflow-wrap: break-word;
+    }
+    .detail-line strong {
+      margin-right: 0;
+    }
+    .detail-line strong + span {
+      margin-right: auto;
+    }
+    /* stats-table definitions - sin bordes, solo background */
+    .stats-wrapper {
+      margin: 6px 0;
+      width: 100%;
+      box-sizing: border-box;
+    }
+    .stats-columns {
+      display: grid;
+      grid-template-columns: 1fr 1fr 1fr;
+      gap: 2px;
+    }
+    .stats-column {
+      display: flex;
+      flex-direction: column;
+      gap: 0px;
+    }
+    .stat-row {
+      display: flex;
+      align-items: center;
+      gap: 2px;
+      background: #e8dcc865;
+      padding: 0px 1px;
+      font-size: 0.65rem;
+      color: #3e2723;
+      border: none;
+    }
+    .stat-ability {
+      font-weight: bold;
+      text-align: center;
+      padding: 0px;
+      font-size: 0.65rem;
+      flex-basis: 28px;
+      flex-shrink: 0;
+    }
+    .stat-score {
+      text-align: center;
+      font-weight: bold;
+      padding: 0px;
+      font-size: 0.65rem;
+      flex-basis: 24px;
+      flex-shrink: 0;
+    }
+    .stat-mod {
+      text-align: center;
+      font-weight: bold;
+      padding: 0px;
+      font-size: 0.65rem;
+      flex-basis: 24px;
+      flex-shrink: 0;
+      margin-left: auto;
+      background-color: rgba(190, 161, 161, 0.6);
+    }
+    .stat-save {
+      text-align: center;
+      font-weight: bold;
+      padding: 0px;
+      font-size: 0.65rem;
+      flex-basis: 24px;
+      flex-shrink: 0;
+      background-color: rgba(188, 201, 177, 0.6);
+    }
+    .stat-row.header {
+      background: transparent;
+    }
+    .stat-row.header .stat-mod,
+    .stat-row.header .stat-save {
+      font-weight: bold;
+      font-size: 0.5rem;
+      /* uppercase text*/
+      text-transform: uppercase;
+      background-color: transparent;
+    }
+    .section {
+      margin-top: 2px;
+      padding-top: 1px;
+    }
+    .section-title {
+      font-weight: bold;
+      text-transform: uppercase;
+      border-bottom: 1px solid #3e2723;
+      margin-bottom: 1px;
+      margin-top: 5px;
+      font-size: 0.75rem;
+      color: #3e2723;
+      letter-spacing: 0.3px;
+    }
+    textarea, input[type=text] {
+      width: 100%;
+      box-sizing: border-box;
+      padding: 10px 12px;
+      font-size: 0.95rem;
+      background: rgba(61, 58, 54, 0.7);
+      color: #d4af37;
+      border: 2px solid #8b6f47;
+      font-family: inherit;
+      outline: none;
+    }
+    
+    input[type=text]:focus {
+      outline: none;
+    }
+    
+    input[type=number] {
+      outline: none;
+      border: 2px solid #8b6f47;
+    }
+    
+    input[type=number]:focus {
+      outline: none;
+    }
+    
+    input[type=file] {
+      display: none;
+    }
+    
+    textarea {
+      resize: none;
+      cursor: pointer;
+      min-height: 60px;
+      line-height: 1.4;
+    }
+    
+    label {
+      display: block;
+      margin: 8px 0 3px;
+      font-size: 0.85rem;
+      color: #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: 600;
+    }
+    
+    button {
+      margin-top: 8px;
+      padding: 10px 14px;
+      font-size: 0.9rem;
+      cursor: pointer;
+      display: block;
+      width: 100%;
+      background: linear-gradient(135deg, #8b1a1a 0%, #a52a2a 100%);
+      color: #d4af37;
+      border: 2px solid #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      font-weight: bold;
+      position: relative;
+      overflow: hidden;
+    }
+    
+    button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: -100%;
+      width: 100%;
+      height: 100%;
+      background: rgba(212, 175, 55, 0.2);
+    }
+    
+    button:hover::before {
+      left: 100%;
+    }
+    .stat-cell {
+      border-left: 1px solid #333;
+      padding: 4px;
+      font-weight: bold;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      line-height: 1.1;
+    }
+    .stat-cell small {
+      font-size: 0.7rem;
+      line-height: 1.1;
+      display: flex;
+      gap: 4px;
+    }
+    /* nuevo estilo para la cuadrícula de estadísticas */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 8px;
+      margin-top: 8px;
+    }
+    #bgImage {
+      position: absolute;
+      left: -9999px;
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    #selectBgBtn {
+      background: linear-gradient(135deg, #8b1a1a 0%, #a52a2a 100%);
+      color: #d4af37;
+      border: 2px solid #d4af37;
+      padding: 6px 12px;
+      border-radius: 0;
+      cursor: pointer;
+      font-weight: bold;
+    }
+
+    button:focus, #selectBgBtn:focus, #clearBgBtn:focus {
+      background: #a52a2a;
+      color: #ffeb3b;
+      box-shadow: none;
+    }
+    #clearBgBtn{
+      background: transparent;
+    }
+    #selectBgBtn{
+      background: transparent;
+    }
+    
+    input {
+      border: 2px solid #8b6f47;
+    }
+    
+    input[type=checkbox] {
+      width: 18px;
+      height: 18px;
+      cursor: pointer;
+      accent-color: #d4af37;
+      flex-shrink: 0;
+      margin: 0 8px 0 0;
+      vertical-align: middle;
+    }
+    
+    fieldset {
+      border: 2px solid #8b6f47;
+      padding: 15px;
+      background: rgba(61, 58, 54, 0.3);
+      margin: 15px 0;
+    }
+    
+    fieldset legend {
+      color: #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 1px;
+      padding: 0 10px;
+      font-weight: bold;
+      font-size: 0.9rem;
+    }
+    
+    fieldset label {
+      display: flex;
+      align-items: center;
+      margin: 6px 0;
+      font-size: 0.9rem;
+      line-height: 1.5;
+      color: #d4af37;
+    }
+    #cardDetails, #cardTraits, #cardActions, #cardMore {
+      font-size: 0.75rem;
+      color: #3e2723;
+      line-height: 1.3;
+    }
+    #cardDetails strong, #cardTraits strong, #cardActions strong, #cardMore strong {
+      color: #3e2723;
+      font-weight: bold;
+    }
+    #cardDetails em, #cardTraits em, #cardActions em, #cardMore em {
+      color: #3e2723;
+      font-style: italic;
+    }
+    #cardDetails br, #cardTraits br, #cardActions br, #cardMore br {
+      display: block;
+      content: "";
+      margin: 2px 0;
+    }
+    #editModal {
+      display: none;
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background: rgba(0, 0, 0, 0.9);
+      z-index: 1000;
+      align-items: center;
+      justify-content: center;
+      backdrop-filter: blur(4px);
+    }
+    
+    #editModal.active {
+      display: flex;
+    }
+    
+    .modal-content {
+      background: linear-gradient(135deg, #2a2420 0%, #1f1c19 100%);
+      padding: 30px;
+      border: 3px solid #d4af37;
+      width: 90%;
+      max-width: 900px;
+      height: 85%;
+      display: flex;
+      flex-direction: column;
+      gap: 15px;
+      box-shadow: none;
+      position: relative;
+    }
+    
+    .modal-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 15px;
+      border-bottom: 2px solid #d4af37;
+      padding-bottom: 15px;
+      gap: 20px;
+    }
+    
+    .modal-header h2 {
+      margin: 0;
+      font-size: 1.5rem;
+      color: #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      font-weight: bold;
+      flex: 1;
+    }
+    
+    .modal-header-buttons {
+      display: flex;
+      gap: 10px;
+      align-items: center;
+    }
+    
+    .modal-save {
+      background: transparent;
+      color: #d4af37;
+      border: 2px solid #d4af37;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 1.2rem;
+      font-weight: bold;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .modal-save:hover {
+      background: #3a9a3a;
+      color: #ffeb3b;
+      box-shadow: none;
+    }
+    
+    .modal-close {
+      background: transparent;
+      color: #d4af37;
+      border: 2px solid #d4af37;
+      padding: 6px 10px;
+      cursor: pointer;
+      font-size: 1.3rem;
+      font-weight: bold;
+      line-height: 1;
+      width: 36px;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    
+    .modal-close:hover {
+      background: #8b1a1a;
+      color: #ffeb3b;
+      box-shadow: none;
+    }
+    
+    #editTextarea {
+      flex: 1;
+      padding: 15px;
+      font-family: "Segoe UI", monospace;
+      font-size: 0.95rem;
+      border: 2px solid #8b6f47;
+      resize: none;
+      background: rgba(61, 58, 54, 0.8);
+      color: #d4af37;
+      line-height: 1.6;
+    }
+    
+    #editTextarea:focus {
+      outline: none;
+      background: rgba(61, 58, 54, 1);
+      border-color: #d4af37;
+      box-shadow: none;
+    }
+    
+    .modal-markdown-help {
+      padding: 12px 15px;
+      background: rgba(30, 28, 25, 0.6);
+      border-top: 1px solid #8b6f47;
+      font-size: 0.85rem;
+      color: #aaa;
+      line-height: 1.4;
+      max-height: 100px;
+      overflow-y: auto;
+    }
+    
+    .modal-markdown-help code {
+      background: rgba(0, 0, 0, 0.3);
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: #d4af37;
+      font-family: monospace;
+    }
+    
+    h2 {
+      color: #d4af37;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 0 2px 10px rgba(0, 0, 0, 0.8);
+      margin: 10px 0 8px 0;
+      font-size: 1.5rem;
+      font-weight: bold;
+    }
+
+  </style>
+</head>
+<body>
+  <div id="container">
+    <div id="form" style="display: flex; flex-direction: column; gap: 20px;">
+      <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 20px;">
+        <div>
+          <label>Nombre</label>
+          <input id="name" type="text" placeholder="Zombi" value="Zombi">
+          <label>Tamaño / Tipo / Alineamiento</label>
+          <input id="info" type="text" placeholder="Muerto viviente Mediano, neutral malvado" value="Muerto viviente Mediano, neutral malvado">
+          
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.9rem;">Clase de armadura</label>
+              <input id="ac" type="text" placeholder="8" value="8" style="margin: 0;">
+            </div>
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.9rem;">Puntos de vida</label>
+              <input id="hp" type="text" placeholder="15 (2d8 + 6)" value="15 (2d8 + 6)" style="margin: 0;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.9rem;">Velocidad</label>
+              <input id="speed" type="text" placeholder="6 m" value="6 m" style="margin: 0;">
+            </div>
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.9rem;">Iniciativa</label>
+              <input id="init" type="text" placeholder="-2 (8)" value="-2 (8)" style="margin: 0;">
+            </div>
+          </div>
+
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.8rem;">FUE</label>
+              <input id="str" type="text" value="13" style="margin: 0;">
+            </div>
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.8rem;">DES</label>
+              <input id="dex" type="text" value="6" style="margin: 0;">
+            </div>
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.8rem;">CON</label>
+              <input id="con" type="text" value="16" style="margin: 0;">
+            </div>
+          </div>
+          <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.8rem;">INT</label>
+              <input id="int" type="text" value="3" style="margin: 0;">
+            </div>
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.8rem;">SAB</label>
+              <input id="wis" type="text" value="6" style="margin: 0;">
+            </div>
+            <div>
+              <label style="margin: 0 0 2px 0; font-size: 0.8rem;">CAR</label>
+              <input id="cha" type="text" value="5" style="margin: 0;">
+            </div>
+          </div>
+
+          <fieldset style="margin-top:8px;">
+            <legend>Prof. salvaciones</legend>
+            <div style="margin-bottom: 8px; display: flex; align-items: center; gap: 8px;">
+              <label style="display: inline; margin: 0; font-size: 0.8rem;">BC:</label>
+              <input id="profBonus" type="number" value="2" style="width: 80px; margin: 0;">
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px; margin-bottom: 8px;">
+              <label><input type="checkbox" id="saveStr"> Fuerza</label>
+              <label><input type="checkbox" id="saveDex"> Destreza</label>
+              <label><input type="checkbox" id="saveCon"> Constitución</label>
+            </div>
+            <div style="display: grid; grid-template-columns: 1fr 1fr 1fr; gap: 8px;">
+              <label><input type="checkbox" id="saveInt"> Inteligencia</label>
+              <label><input type="checkbox" id="saveWis" checked> Sabiduría</label>
+              <label><input type="checkbox" id="saveCha"> Carisma</label>
+            </div>
+          </fieldset>
+        </div>
+
+        <div>
+          <label>Detalles adicionales </label>
+          <textarea id="details" rows="4">**Inmunidades:** veneno; cansancio, envenenado.
+**Sentidos:** visión en la oscuridad 18 m; Percepción pasiva 8.
+**Idiomas:** entiende común y otro idioma, pero no puede hablar.
+**VD:** 1/4 (50 PX; BC +2)</textarea>
+          <label>Rasgos</label>
+          <textarea id="traits" rows="4" data-lt-tmp-id="lt-825152" spellcheck="false" data-gramm="false">**Fortaleza de muerto viviente.** Si el daño reduce a 0 los puntos de golpe del zombi, hará una tirada de salvación de Constitución (CD 5 más el daño sufrido), siempre que el daño no sea radiante o proceda de un crítico. Si la supera, el zombi se queda con 1 punto de golpe.</textarea>
+          <label>Acciones</label>
+          <textarea id="actions" rows="4" data-lt-tmp-id="lt-797436" spellcheck="false" data-gramm="false">**Golpe.** Tirada de ataque cuerpo a cuerpo: +3, alcance 1,5 m. *Acierto:* 5 (1d8 + 1) de daño contundente.</textarea>
+          <label><input type="checkbox" id="showMore"> Mostrar sección extra</label>
+
+          <input id="moreTitle" type="text" value="Reacciones / Acciones legendarias / Bonus">
+          <textarea id="more" rows="3" data-lt-tmp-id="lt-331209" spellcheck="false" data-gramm="false"></textarea>
+        </div>
+      </div>
+    </div>
+
+    <div id="controls-section">
+      <!-- Dibujar reverso -->
+      <div>
+        <label style="display: flex; align-items: center; gap: 0px 8px; margin: 0;">
+          <input type="checkbox" id="showBackside" style="margin: 0;">
+          <span style="margin: 0; font-size: 0.85rem;">Dibujar reverso</span>
+        </label>
+      </div>
+      
+      <!-- Escala imagen -->
+      <div>
+        <label style="margin: 0;">Escala imagen:</label>
+        <input id="scale" type="number" value="3" step="0.5" style="margin: 0;">
+      </div>
+      
+      <!-- Cargar fondo -->
+      <div style="display: grid; grid-template-columns: 0.2fr 1fr; align-items: center;">
+        <button id="clearBgBtn" type="button" style="max-height: 30px !important; height: 30px;">✕</button>
+        <button id="selectBgBtn" type="button">Cargar fondo</button>
+        <input id="bgImage" type="file" accept="image/*">
+      </div>
+      
+      <!-- Descargar -->
+      <div>
+        <button id="downloadBtn">Descargar</button>
+      </div>
+    </div>
+    
+    <div id="card-wrapper">
+      <div id="statCard" class="stat-card">
+        <div class="overlay"></div>
+        <h1 id="cardName">Zombi</h1>
+        <div class="detail-line" id="cardInfo">No muerto/Mediano/</div>
+        <div class="detail-line" style="display: flex; justify-content: space-between; gap: 12px;">
+          <strong>CA:</strong> 
+          <span id="cardAC">v</span>
+          <strong>Iniciativa.:</strong> 
+          <span id="cardInit">v</span>
+        </div>
+        <div class="detail-line" style="display: flex; justify-content: space-between; gap: 12px;">
+          <strong>PG:</strong> 
+          <span id="cardHP">v</span>
+        </div>
+        <div class="detail-line" style="display: flex; justify-content: space-between; gap: 12px;">
+          <strong>Velocidad:</strong> 
+          <span id="cardSpeed">v</span>  
+        </div>
+        <!-- tabla de estadísticas estilo D&D 5e: 2 columnas, encabezado único -->
+        <div class="stats-wrapper">
+          <div class="stats-columns">
+            <div class="stats-column">
+              <div class="stat-row header">
+                <div class="stat-ability"></div>
+                <div class="stat-score"></div>
+                <div class="stat-mod">Mod.</div>
+                <div class="stat-save">Salv.</div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-ability">FUE</div>
+                <div class="stat-score" id="scoreSTR"></div>
+                <div class="stat-mod" id="modSTR"></div>
+                <div class="stat-save" id="saveSTRval"></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-ability">INT</div>
+                <div class="stat-score" id="scoreINT"></div>
+                <div class="stat-mod" id="modINT"></div>
+                <div class="stat-save" id="saveINTval"></div>
+              </div>
+            </div>
+            
+            <div class="stats-column">
+              <div class="stat-row header">
+                <div class="stat-ability"></div>
+                <div class="stat-score"></div>
+                <div class="stat-mod">Mod.</div>
+                <div class="stat-save">Salv.</div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-ability">DES</div>
+                <div class="stat-score" id="scoreDEX"></div>
+                <div class="stat-mod" id="modDEX"></div>
+                <div class="stat-save" id="saveDEXval"></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-ability">SAB</div>
+                <div class="stat-score" id="scoreWIS"></div>
+                <div class="stat-mod" id="modWIS"></div>
+                <div class="stat-save" id="saveWISval"></div>
+              </div>
+            </div>
+
+            <div class="stats-column">
+              <div class="stat-row header">
+                <div class="stat-ability"></div>
+                <div class="stat-score"></div>
+                <div class="stat-mod">Mod.</div>
+                <div class="stat-save">Salv.</div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-ability">CON</div>
+                <div class="stat-score" id="scoreCON"></div>
+                <div class="stat-mod" id="modCON"></div>
+                <div class="stat-save" id="saveCONval"></div>
+              </div>
+              <div class="stat-row">
+                <div class="stat-ability">CAR</div>
+                <div class="stat-score" id="scoreCHA"></div>
+                <div class="stat-mod" id="modCHA"></div>
+                <div class="stat-save" id="saveCHAval"></div>
+              </div>
+            </div>
+
+          </div>
+        </div>
+        <div class="section">
+          <div id="cardDetails">v</div>
+        </div>
+        <div class="section">
+          <div class="section-title">Rasgos</div>
+          <div id="cardTraits">v</div>
+        </div>
+        <div class="section">
+          <div class="section-title">Acciones</div>
+          <div id="cardActions">v</div>
+        </div>
+        <div class="section more-section">
+          <div class="section-title" id="cardMoreTitle">Reacciones / Acc. legendarias / Bonus</div>
+          <div id="cardMore">v</div>
+        </div>
+      </div>
+      <div id="backside-card">
+        <div id="backside-card-content"></div>
+        <div id="backside-card-corners">
+          <div class="corner tl"></div>
+          <div class="corner tr"></div>
+          <div class="corner bl"></div>
+          <div class="corner br"></div>
+        </div>
+      </div>
+    </div>
+    
+  </div>
+
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+  <script>
+    // Función para parsear markdown básico
+    function parseMarkdown(text) {
+      if (!text) return '…';
+      let html = text
+        // Saltos de línea
+        .split('\n').join('<br>')
+        // Negrita: **texto**
+        .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+        // Cursiva: *texto*
+        .replace(/\*(.+?)\*/g, '<em>$1</em>')
+        // Encabezados: # Título
+        .replace(/^### (.+?)$/gm, '<strong>$1</strong>')
+        .replace(/^## (.+?)$/gm, '<strong>$1</strong>')
+        .replace(/^# (.+?)$/gm, '<strong>$1</strong>');
+      return html;
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+     const fields = ['name','info','ac','hp','speed','init','str','dex','con','int','wis','cha','details','traits','actions','more'];
+     function updateCard() {
+      document.getElementById('cardName').textContent = document.getElementById('name').value || 'Monstruo';
+      document.getElementById('cardInfo').textContent = document.getElementById('info').value || 'Tamaño / Tipo / Alineamiento';
+      document.getElementById('cardAC').textContent = document.getElementById('ac').value || '0';
+      document.getElementById('cardHP').textContent = document.getElementById('hp').value || '0';
+      document.getElementById('cardSpeed').textContent = document.getElementById('speed').value || '0';
+      document.getElementById('cardInit').textContent = document.getElementById('init').value || '0';
+      // compute stats with modifiers and saves
+      const profBonus = parseInt(document.getElementById('profBonus').value) || 0;
+      ['STR','DEX','CON','INT','WIS','CHA'].forEach(abbr=>{
+        const inputId = abbr.toLowerCase();
+        const score = parseInt(document.getElementById(inputId).value) || 0;
+        const mod = Math.floor((score-10)/2);
+        const checkboxId = 'save' + abbr[0].toUpperCase() + abbr.slice(1).toLowerCase();
+        const profCheckbox = document.getElementById(checkboxId);
+        const prof = profCheckbox && profCheckbox.checked ? profBonus : 0;
+        const saveVal = mod + prof;
+        
+        // actualizar celdas de puntuación, modificador y salvación
+        const scoreCell = document.getElementById('score'+abbr);
+        const modCell = document.getElementById('mod'+abbr);
+        const saveCell = document.getElementById('save'+abbr+'val');
+        
+        if (scoreCell) scoreCell.textContent = score;
+        if (modCell) modCell.textContent = (mod>=0?'+':'') + mod;
+        if (saveCell) saveCell.textContent = (saveVal>=0?'+':'') + saveVal;
+      });
+      document.getElementById('cardDetails').innerHTML = parseMarkdown(document.getElementById('details').value);
+      document.getElementById('cardTraits').innerHTML = parseMarkdown(document.getElementById('traits').value);
+      document.getElementById('cardActions').innerHTML = parseMarkdown(document.getElementById('actions').value);
+      const show = document.getElementById('showMore').checked;
+      const title = document.getElementById('moreTitle').value || 'Reacciones / Acc. legendarias / Bonus';
+      const section = document.querySelector('#statCard .more-section');
+      section.style.display = show ? 'block' : 'none';
+      section.querySelector('.section-title').textContent = title;
+      document.getElementById('cardMore').innerHTML = parseMarkdown(document.getElementById('more').value);
+      
+      // Sincronizar altura del reverso después de actualizar
+      updateBacksideHeight();
+     }
+
+     // Función para actualizar altura del reverso
+     const updateBacksideHeight = () => {
+       const showBackside = document.getElementById('showBackside').checked;
+       if (showBackside) {
+         const card = document.getElementById('statCard');
+         const backsideCard = document.getElementById('backside-card');
+         backsideCard.style.width = card.offsetWidth + 'px';
+         backsideCard.style.height = card.offsetHeight + 'px';
+         backsideCard.style.minHeight = card.offsetHeight + 'px';
+       }
+     };
+     fields.forEach(id => {
+      const el = document.getElementById(id);
+      el.addEventListener('input', updateCard);
+     });
+    ['saveStr','saveDex','saveCon','saveInt','saveWis','saveCha'].forEach(id=>{
+      document.getElementById(id).addEventListener('change', updateCard);
+    });
+    document.getElementById('showMore').addEventListener('change', updateCard);
+    document.getElementById('moreTitle').addEventListener('input', updateCard);
+    document.getElementById('profBonus').addEventListener('input', updateCard);
+
+    // Modal editor system
+    const modal = document.getElementById('editModal');
+    const editTextarea = document.getElementById('editTextarea');
+    const modalTitle = document.getElementById('modalTitle');
+    let currentFieldId = null;
+
+    const openModal = (fieldId, fieldLabel) => {
+      currentFieldId = fieldId;
+      const textarea = document.getElementById(fieldId);
+      editTextarea.value = textarea.value;
+      modalTitle.textContent = `Editar: ${fieldLabel}`;
+      modal.classList.add('active');
+      editTextarea.focus();
+    };
+
+    const closeModal = () => {
+      modal.classList.remove('active');
+      currentFieldId = null;
+    };
+
+    const saveModal = () => {
+      if (currentFieldId) {
+        document.getElementById(currentFieldId).value = editTextarea.value;
+        updateCard();
+      }
+      closeModal();
+    };
+
+    // Añadir click listeners a textareas
+    const textareaFields = [
+      { id: 'details', label: 'Detalles adicionales' },
+      { id: 'traits', label: 'Rasgos' },
+      { id: 'actions', label: 'Acciones' },
+      { id: 'more', label: 'Sección extra' }
+    ];
+
+    textareaFields.forEach(field => {
+      const textarea = document.getElementById(field.id);
+      if (textarea) {
+        textarea.addEventListener('click', () => openModal(field.id, field.label));
+      }
+    });
+
+    // Modal button handlers
+    document.getElementById('modalCloseBtn').addEventListener('click', closeModal);
+    document.getElementById('modalSaveBtn').addEventListener('click', saveModal);
+
+    // Close modal on Escape key
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape' && modal.classList.contains('active')) {
+        closeModal();
+      }
+    });
+
+    // Close modal on backdrop click
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        closeModal();
+      }
+    });
+
+    // inicializar con los valores actuales (zombi por defecto)
+    updateCard();
+
+    // Variable para almacenar imagen del reverso
+    let backsideImage = null;
+
+    // Función para descargar la carta (frente y opcionalmente reverso)
+    const downloadCard = async () => {
+      const card = document.getElementById('statCard');
+      const backsideCard = document.getElementById('backside-card');
+      const scaleInput = parseFloat(document.getElementById('scale').value) || 1;
+      const showBackside = document.getElementById('showBackside').checked;
+
+      try {
+        // Generar imagen del frente
+        const frontCanvas = await html2canvas(card, {
+          useCORS: true,
+          allowTaint: true,
+          backgroundColor: null,
+          scale: scaleInput,
+          width: card.offsetWidth,
+          height: card.offsetHeight
+        });
+
+        const rawName = document.getElementById('name').value.trim();
+        const safeName = rawName ? rawName.replace(/[^a-z0-9]+/gi, '_') : 'monstruo';
+        const now = new Date();
+        const timestamp = now.toISOString().replace(/[:.-]/g, '').slice(0,15);
+
+        // Si mostrar reverso está activado y hay imagen de reverso
+        if (showBackside && backsideImage) {
+          // Generar imagen del reverso con html2canvas
+          const backsideCanvas = await html2canvas(backsideCard, {
+            useCORS: true,
+            allowTaint: true,
+            backgroundColor: null,
+            scale: scaleInput,
+            width: backsideCard.offsetWidth,
+            height: backsideCard.offsetHeight
+          });
+
+          // Descargar el reverso
+          const linkBackside = document.createElement('a');
+          linkBackside.download = `${safeName}_${timestamp}_reverso.png`;
+          linkBackside.href = backsideCanvas.toDataURL('image/png');
+          linkBackside.click();
+
+          // Y también descargar el frente
+          const linkFront = document.createElement('a');
+          linkFront.download = `${safeName}_${timestamp}_frente.png`;
+          linkFront.href = frontCanvas.toDataURL('image/png');
+          linkFront.click();
+        } else {
+          // Descargar solo el frente
+          const link = document.createElement('a');
+          link.download = `${safeName}_${timestamp}.png`;
+          link.href = frontCanvas.toDataURL('image/png');
+          link.click();
+        }
+      } catch (err) {
+        console.error('Error generando imagen:', err);
+        alert('No se pudo generar la imagen. Comprueba que la imagen de fondo no tenga restricciones CORS.');
+      }
+    };
+
+    document.getElementById('downloadBtn').addEventListener('click', downloadCard);
+
+     // button to trigger file input
+     document.getElementById('selectBgBtn').addEventListener('click', () => {
+       document.getElementById('bgImage').click();
+       document.getElementById('selectBgBtn').blur();
+     });
+
+     // background image loader
+     document.getElementById('bgImage').addEventListener('change', e => {
+       const file = e.target.files[0];
+       if (!file) return;
+       const reader = new FileReader();
+       reader.onload = evt => {
+         const url = evt.target.result;
+         const showBackside = document.getElementById('showBackside').checked;
+         const backsideCard = document.getElementById('backside-card');
+         
+         if (showBackside) {
+           // Si mostrar reverso está activo, guardar en backsideImage y mostrar en reverso
+           backsideImage = url;
+           backsideCard.style.background = '';
+           backsideCard.style.backgroundImage = `url('${url}')`;
+           backsideCard.classList.remove('no-background');
+         } else {
+           // Si no está activo, aplicar como fondo del frente
+           document.getElementById('statCard').style.backgroundImage = `url('${url}')`;
+         }
+       };
+       reader.readAsDataURL(file);
+     });
+
+     // clear background image
+     document.getElementById('clearBgBtn').addEventListener('click', () => {
+       document.getElementById('bgImage').value = '';
+       document.getElementById('statCard').style.backgroundImage = 'none';
+       const backsideCard = document.getElementById('backside-card');
+       backsideCard.style.backgroundImage = '';
+       backsideCard.style.background = '';
+       backsideCard.classList.add('no-background');
+       backsideImage = null;
+       document.getElementById('clearBgBtn').blur();
+     });
+
+     // Función para sincronizar el estado del reverso
+     const syncBacksideState = () => {
+       const showBackside = document.getElementById('showBackside').checked;
+       const currentBg = document.getElementById('statCard').style.backgroundImage;
+       const backsideCard = document.getElementById('backside-card');
+       
+       if (showBackside) {
+         // Activar modo reverso
+         backsideCard.classList.add('active');
+         // Sincronizar tamaño
+         const card = document.getElementById('statCard');
+         backsideCard.style.width = card.offsetWidth + 'px';
+         backsideCard.style.height = card.offsetHeight + 'px';
+         backsideCard.style.maxWidth = 'none';
+         backsideCard.style.minHeight = card.offsetHeight + 'px';
+         if (currentBg && currentBg !== 'none') {
+           // Pasar el fondo actual al reverso
+           backsideImage = currentBg.slice(5, -2); // Extraer URL de url('...')
+           document.getElementById('statCard').style.backgroundImage = 'none';
+           backsideCard.style.background = '';
+           backsideCard.style.backgroundImage = currentBg;
+           backsideCard.classList.remove('no-background');
+         } else {
+           // No hay fondo, agregar clase para estilos oscuros con patrón de barras
+           backsideCard.style.background = '';
+           backsideCard.style.backgroundImage = '';
+           backsideCard.classList.add('no-background');
+         }
+       } else {
+         // Desactivar modo reverso
+         backsideCard.classList.remove('active');
+         backsideCard.style.backgroundImage = '';
+         backsideCard.style.background = '';
+         backsideCard.style.width = '100%';
+         backsideCard.style.maxWidth = '400px';
+         backsideCard.style.minHeight = 'auto';
+         backsideCard.style.height = 'auto';
+         backsideCard.classList.remove('no-background');
+         if (backsideImage) {
+           // Restaurar el fondo desde el reverso
+           document.getElementById('statCard').style.backgroundImage = `url('${backsideImage}')`;
+           backsideImage = null;
+         }
+       }
+     };
+
+     // Checkbox para mostrar/ocultar reverso
+     document.getElementById('showBackside').addEventListener('change', syncBacksideState);
+
+     // Sincronizar estado del reverso al cargar si ya estaba marcado
+     if (document.getElementById('showBackside').checked) {
+       syncBacksideState();
+     }
+
+     // ResizeObserver para sincronizar altura del reverso cuando cambia el frente
+     const resizeObserver = new ResizeObserver(updateBacksideHeight);
+
+     // Observar cambios en el tamaño del frente
+     resizeObserver.observe(document.getElementById('statCard'));
+
+     // opcional: si quieres un fondo por defecto embebido,
+     // conviértelo a data URL y asígnalo aquí. Ejemplo:
+     // const defaultBg = 'data:image/jpeg;base64,...';
+     // document.getElementById('statCard').style.backgroundImage = `url('${defaultBg}')`;
+    });
+   </script>
+
+  <!-- Modal Editor -->
+  <div id="editModal">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h2 id="modalTitle">Editar contenido</h2>
+        <div class="modal-header-buttons">
+          <button class="modal-save" id="modalSaveBtn" title="Guardar">💾</button>
+          <button class="modal-close" id="modalCloseBtn">&times;</button>
+        </div>
+      </div>
+      <textarea id="editTextarea"></textarea>
+      <div class="modal-markdown-help">
+        <strong style="color: #d4af37;">Markdown:</strong> 
+        <code>**negrita**</code> 
+        <code>*cursiva*</code> 
+        <code># Título</code> 
+        <code>## Subtítulo</code> 
+        <code>### Nivel 3</code>
+      </div>
+    </div>
+  </div>
+</body>
+</html>
