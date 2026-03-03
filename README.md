@@ -80,7 +80,17 @@ Crear una tarjeta de "Dragón Rojo Adulto":
 
 ## 📄 Licencia
 
-Proyecto personal para facilitar la creación de contenido de D&D 5.5e.
+Este proyecto está bajo la licencia **GNU General Public License v3.0 (GPL-3.0)**.
+
+**Esto significa que:**
+- ✅ Puedes usar, modificar y distribuir este proyecto libremente
+- ✅ Tienes acceso completo al código fuente
+- ✅ Puedes crear versiones derivadas
+- ⚠️ Cualquier versión modificada debe también ser licenciada bajo GPL-3.0
+- ⚠️ Debes mencionar los cambios realizados
+- ⚠️ Debes incluir una copia de la licencia GPL-3.0
+
+Para más información, ver el archivo [LICENSE](./LICENSE) o visita [gnu.org/licenses/gpl-3.0.html](https://www.gnu.org/licenses/gpl-3.0.html)
 
 ---
 

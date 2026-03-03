@@ -809,6 +809,44 @@
       font-weight: bold;
     }
 
+    /* Footer */
+    footer {
+      position: fixed;
+      bottom: 0;
+      left: 0;
+      width: 100%;
+      background: linear-gradient(180deg, rgba(26, 20, 16, 0.95) 0%, rgba(15, 13, 10, 0.98) 100%);
+      border-top: 1px solid #8b7355;
+      padding: 12px 20px;
+      font-size: 0.75rem;
+      color: #aaa;
+      text-align: center;
+      z-index: 999;
+      box-shadow: 0 -2px 10px rgba(0, 0, 0, 0.5);
+    }
+
+    footer a {
+      color: #d4af37;
+      text-decoration: none;
+      font-weight: bold;
+      transition: color 0.3s;
+    }
+
+    footer a:hover {
+      color: #ffeb3b;
+      text-decoration: underline;
+    }
+
+    footer p {
+      margin: 4px 0;
+      line-height: 1.4;
+    }
+
+    /* Espaciado para que el contenido no quede oculto debajo del footer */
+    body {
+      padding-bottom: 70px;
+    }
+
   </style>
 </head>
 <body>
@@ -1395,5 +1433,13 @@
       </div>
     </div>
   </div>
+
+  <!-- Footer -->
+  <footer>
+    <p>🐉 <strong>Generador de Tarjetas de Monstruos D&D 5.5e</strong></p>
+    <p>Creado por <a href="https://github.com/NeoDaark" target="_blank">NeoDaark</a> | 
+    <a href="https://github.com/NeoDaark/tarjetas-monstruos-dnd-2024" target="_blank">Ver en GitHub</a> | 
+    Licencia: <a href="https://www.gnu.org/licenses/gpl-3.0.html" target="_blank">GNU GPL v3</a></p>
+  </footer>
 </body>
 </html>
